@@ -1,8 +1,13 @@
 from flask import Flask, request, jsonify, render_template_string, send_from_directory
 import random
 import os
+import logging
 
 app = Flask(__name__)
+
+# Configure logging
+logging.basicConfig(level=logging.DEBUG)
+logger = logging.getLogger(__name__)
 
 choices = ["rock", "paper", "scissors"]
 
@@ -23,6 +28,7 @@ def favicon():
         return send_from_directory(os.path.join(app.root_path, 'static'),
                                    'favicon.ico', mimetype='image/vnd.microsoft.icon')
     except FileNotFoundError:
+        logger.error("Favicon not found")
         return '', 204  # No content if favicon is missing
 
 HTML_PAGE = """
@@ -139,11 +145,14 @@ def index():
 @app.route("/play", methods=["POST"])
 def play_route():
     try:
-        data = request.get_json()
+        data = request.get_json(force=True)
+        logger.debug(f"Received data: {data}")
         if not data or "choice" not in data:
+            logger.error("Missing choice in request")
             return jsonify({"error": "Missing choice"}), 400
         player_choice = data["choice"]
         if player_choice not in choices:
+            logger.error(f"Invalid choice: {player_choice}")
             return jsonify({"error": "Invalid choice"}), 400
         computer_choice = random.choice(choices)
         result = get_winner(player_choice, computer_choice)
@@ -153,6 +162,7 @@ def play_route():
             "result": result
         })
     except Exception as e:
+        logger.error(f"Exception in play_route: {str(e)}")
         return jsonify({"error": str(e)}), 500
 
 if __name__ == "__main__":
