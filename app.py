@@ -135,14 +135,19 @@ def index():
 
 @app.route("/play", methods=["POST"])
 def play_route():
-    player_choice = request.json["choice"]
-    computer_choice = random.choice(choices)
-    result = get_winner(player_choice, computer_choice)
-    return jsonify({
-        "player": player_choice,
-        "computer": computer_choice,
-        "result": result
-    })
+    try:
+        player_choice = request.json.get("choice")
+        if player_choice not in choices:
+            return jsonify({"error": "Invalid choice"}), 400
+        computer_choice = random.choice(choices)
+        result = get_winner(player_choice, computer_choice)
+        return jsonify({
+            "player": player_choice,
+            "computer": computer_choice,
+            "result": result
+        })
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
 if __name__ == "__main__":
     app.run(debug=True)
