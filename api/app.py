@@ -1,5 +1,6 @@
-from flask import Flask, request, jsonify, render_template_string
+from flask import Flask, request, jsonify, render_template_string, send_from_directory
 import random
+import os
 
 app = Flask(__name__)
 
@@ -15,12 +16,19 @@ def get_winner(player, computer):
     else:
         return "Computer wins!"
 
+# Route to serve favicon
+@app.route('/favicon.ico')
+def favicon():
+    return send_from_directory(os.path.join(app.root_path, 'static'),
+                               'favicon.ico', mimetype='image/vnd.microsoft.icon')
+
 HTML_PAGE = """
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
   <title>Rock Paper Scissors</title>
+  <link rel="icon" href="{{ url_for('favicon') }}" type="image/x-icon">
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -63,6 +71,21 @@ HTML_PAGE = """
       font-size: 24px;
       margin-top: 10px;
     }
+    #play-again {
+      margin-top: 20px;
+      padding: 10px 20px;
+      font-size: 16px;
+      cursor: pointer;
+      display: none;
+      border: none;
+      border-radius: 8px;
+      background: #e67e22;
+      color: white;
+      transition: background 0.3s;
+    }
+    #play-again:hover {
+      background: #d35400;
+    }
   </style>
 </head>
 <body>
@@ -78,6 +101,7 @@ HTML_PAGE = """
       <p id="computer"></p>
       <h2 id="result"></h2>
     </div>
+    <button id="play-again" onclick="resetGame()">Play Again</button>
   </div>
 
   <script>
@@ -91,6 +115,14 @@ HTML_PAGE = """
       document.getElementById("player").innerText = "You chose: " + data.player;
       document.getElementById("computer").innerText = "Computer chose: " + data.computer;
       document.getElementById("result").innerText = data.result;
+      document.getElementById("play-again").style.display = "inline-block";
+    }
+
+    function resetGame() {
+      document.getElementById("player").innerText = "";
+      document.getElementById("computer").innerText = "";
+      document.getElementById("result").innerText = "";
+      document.getElementById("play-again").style.display = "none";
     }
   </script>
 </body>
@@ -102,7 +134,7 @@ def index():
     return render_template_string(HTML_PAGE)
 
 @app.route("/play", methods=["POST"])
-def play():
+def play_route():
     player_choice = request.json["choice"]
     computer_choice = random.choice(choices)
     result = get_winner(player_choice, computer_choice)
