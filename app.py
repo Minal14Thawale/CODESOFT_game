@@ -16,11 +16,14 @@ def get_winner(player, computer):
     else:
         return "Computer wins!"
 
-# Route to serve favicon
+# Route to serve favicon with fallback
 @app.route('/favicon.ico')
 def favicon():
-    return send_from_directory(os.path.join(app.root_path, 'static'),
-                               'favicon.ico', mimetype='image/vnd.microsoft.icon')
+    try:
+        return send_from_directory(os.path.join(app.root_path, 'static'),
+                                   'favicon.ico', mimetype='image/vnd.microsoft.icon')
+    except FileNotFoundError:
+        return '', 204  # No content if favicon is missing
 
 HTML_PAGE = """
 <!DOCTYPE html>
@@ -136,7 +139,10 @@ def index():
 @app.route("/play", methods=["POST"])
 def play_route():
     try:
-        player_choice = request.json.get("choice")
+        data = request.get_json()
+        if not data or "choice" not in data:
+            return jsonify({"error": "Missing choice"}), 400
+        player_choice = data["choice"]
         if player_choice not in choices:
             return jsonify({"error": "Invalid choice"}), 400
         computer_choice = random.choice(choices)
